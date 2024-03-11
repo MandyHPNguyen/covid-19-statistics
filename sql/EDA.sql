@@ -15,54 +15,43 @@ Reporting Frequency: Every Wednesday - Pattern changed from Johns Hopkins to WHO
 -- Death Tables
 SELECT *
 FROM Covid19Stats..[covid-deaths]
-ORDER BY 3, 4;
+ORDER BY 3, 4
+;
 -- Vacination Tables
 SELECT *
 FROM Covid19Stats..[covid-vacinations]
-ORDER BY 3, 4;
+ORDER BY 3, 4
+;
 
 -- #2-Exploratory Analysis
 
 -- Case Demographics
+----- All Records
 SELECT location, date, total_cases, new_cases, total_deaths, population
 FROM Covid19Stats..[covid-deaths]
-ORDER BY 1, 2;
+ORDER BY 1, 2
+;
 
-/*
-SELECT 
-	location, date, total_deaths, total_cases, new_cases, population,
-	ROUND( ( CAST(total_deaths AS float) / NULLIF( CAST(total_cases AS float), 0) ) *100, 15) AS death_p_case,
-	ROUND( ( CAST(total_cases AS float) / NULLIF( population, 0 ) ) *100, 15) AS case_p_pop,
-	ROUND( ( CAST(total_deaths AS float) / NULLIF( population, 0 ) ) *100, 15) AS death_p_pop
-FROM Covid19Stats..[covid-deaths]
-
-WHERE location LIKE '%United States%'
-	OR location LIKE '%Viet%'
-ORDER BY 1, 2;
-*/
-
-
--- Total Deaths Rank by Country
+-- Total Deaths Rank by Contient & Country
 SELECT
-	death_rank, continent, location, population, total_cases, total_deaths
+	*
 FROM (
 	SELECT
-		continent, location, population, 
-		MAX(total_cases) AS total_cases, MAX(total_deaths) AS total_deaths,
-		RANK() OVER (ORDER BY MAX(total_deaths) DESC) AS death_rank
+		continent, location, population
+		, MAX(total_cases) AS total_cases, MAX(total_deaths) AS total_deaths
+		, RANK() OVER (ORDER BY MAX(total_deaths) DESC) AS death_rank
 	FROM Covid19Stats..[covid-deaths]
 	GROUP BY continent, location, population
 ) t
-ORDER BY death_rank ASC;
-
--- Total Infection Rank by Country
-
+WHERE continent <> ''
+ORDER BY continent, location, death_rank
+;
 
 -- Total Deaths vs Total Cases
--- The likelihood of deaths by country
+------- The likelihood of deaths by country
 SELECT 
-	location, date, total_deaths, total_cases, new_cases, population,
-	ROUND( ( CAST(total_deaths AS float) / NULLIF( CAST(total_cases AS float), 0) ) *100, 15) AS death_p_case
+	location, date, total_deaths, total_cases, new_cases, population
+	, ROUND( ( CAST(total_deaths AS float) / NULLIF( CAST(total_cases AS float), 0) ) *100, 15) AS death_total_ratio
 FROM (
 	SELECT
 		*,
@@ -70,14 +59,17 @@ FROM (
 							ORDER BY date DESC) AS row_number
 	FROM Covid19Stats..[covid-deaths]
 ) t
-WHERE t.row_number = 1
-ORDER by location;
+WHERE 
+	continent <> ''
+	and t.row_number = 1
+ORDER by location
+;
 
 -- Total Cases vs Population
 -- The likelihood of infection by population
 SELECT 
-	location, date, total_deaths, total_cases, new_cases, population,
-	ROUND( ( CAST(total_cases AS float) / NULLIF( population, 0 ) ) *100, 15) AS case_p_pop
+	location, date, total_deaths, total_cases, new_cases, population
+	, ROUND( ( CAST(total_cases AS float) / NULLIF( population, 0 ) ) *100, 15) AS total_pop_ratio
 FROM (
 	SELECT
 		*,
@@ -85,28 +77,31 @@ FROM (
 							ORDER BY date DESC) AS row_number
 	FROM Covid19Stats..[covid-deaths]
 ) t
-WHERE t.row_number = 1
-ORDER by location;
+WHERE 
+	continent <> ''
+	AND t.row_number = 1
+ORDER by location
+;
 
 -- Highest Infection By Population and Deaths by Infection
 SELECT
-	location, population, total_infected, total_dead, infected_pop_rank,
-	ROUND( ( total_infected / NULLIF( population, 0 ) ) *100, 4) AS pop_infected_ratio,
-	dead_infected_rank,
-	ROUND( ( total_dead / NULLIF( total_infected , 0 ) ) *100, 4) AS dead_infected_ratio
+	location, population, total_infected, total_dead, infected_pop_rank
+	, ROUND( ( total_infected / NULLIF( population, 0 ) ) *100, 4) AS infected_pop_ratio
+	, dead_infected_rank
+	, ROUND( ( total_dead / NULLIF( total_infected , 0 ) ) *100, 4) AS dead_infected_ratio
 FROM (
 	SELECT 
-		location, population,
-		CAST( MAX(total_deaths) AS float ) AS total_dead,
-		CAST( MAX(total_cases) AS float ) AS total_infected,
-		RANK() OVER( ORDER BY( ROUND( ( CAST( MAX(total_cases) AS float ) / NULLIF( population, 0 ) ) *100, 4) ) DESC ) as infected_pop_rank,
-		RANK() OVER( ORDER BY( ROUND( ( CAST( MAX(total_deaths) AS float ) / NULLIF( CAST( MAX(total_cases) AS float ), 0 ) ) *100, 4) ) DESC ) as dead_infected_rank
+		continent, location, population
+		, CAST( MAX(total_deaths) AS float ) AS total_dead
+		, CAST( MAX(total_cases) AS float ) AS total_infected
+		, RANK() OVER( ORDER BY( ROUND( ( CAST( MAX(total_cases) AS float ) / NULLIF( population, 0 ) ) *100, 4) ) DESC ) as infected_pop_rank
+		, RANK() OVER( ORDER BY( ROUND( ( CAST( MAX(total_deaths) AS float ) / NULLIF( CAST( MAX(total_cases) AS float ), 0 ) ) *100, 4) ) DESC ) as dead_infected_rank
 	FROM Covid19Stats..[covid-deaths]
 	GROUP BY location, population
 	) t
-
 WHERE 
-	t.location = 'Vietnam'
+	continent <> ''
+	AND t.location = 'Vietnam'
 	OR t.location = 'United States'
 	OR t.location = 'India'
 	OR t.location = 'China'
@@ -114,5 +109,50 @@ WHERE
 	OR t.location = 'Japan'
 	OR t.location = 'South Korea'
 
-ORDER by t.infected_pop_rank ASC, t.dead_infected_rank ASC;
+ORDER by t.infected_pop_rank ASC, t.dead_infected_rank ASC
+;
 
+-- Death rate by continent
+----- User continent column
+SELECT
+	continent
+	, MAX( total_deaths ) AS TotalDeathCount
+FROM Covid19Stats..[covid-deaths]
+WHERE continent <> ''
+GROUP BY continent
+ORDER BY TotalDeathCount DESC
+;
+----- User location column
+SELECT
+	location
+	, MAX( total_deaths ) AS TotalDeathCount
+FROM Covid19Stats..[covid-deaths]
+WHERE continent = ''
+GROUP BY location
+ORDER BY TotalDeathCount DESC
+;
+
+-- Global Number
+SELECT
+	SUM( CAST(new_cases AS float) ) AS NewCases
+	, SUM( CAST(total_deaths AS float) ) AS TotalDeaths
+	, ( SUM( CAST(new_deaths AS float) ) / SUM( CAST(new_cases AS float) ) )*100 AS death_new_ratio
+FROM Covid19Stats..[covid-deaths]
+WHERE continent <> ''
+ORDER BY 1
+;
+
+-- Total Population vs Vaccination
+SELECT
+	d.continent, d.location, d.date, d.population
+	, v.new_vaccinations
+	, SUM( CONVERT(float, v.new_vaccinations) ) OVER( PARTITION BY d.location ORDER BY d.location, d.date ) AS RollingPeopleVaccinated
+FROM Covid19Stats..[covid-deaths] d
+JOIN Covid19Stats..[covid-vacinations] v
+	ON d.location = v.location
+	AND d.date = v.date
+WHERE 
+	d.continent <> ''
+	AND d.location = 'United States'
+ORDER BY 1,2,3
+;
