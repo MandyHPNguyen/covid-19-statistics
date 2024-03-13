@@ -91,7 +91,7 @@ SELECT
 	, ROUND( ( total_dead / NULLIF( total_infected , 0 ) ) *100, 4) AS dead_infected_ratio
 FROM (
 	SELECT 
-		continent, location, population
+		location, population
 		, CAST( MAX(total_deaths) AS float ) AS total_dead
 		, CAST( MAX(total_cases) AS float ) AS total_infected
 		, RANK() OVER( ORDER BY( ROUND( ( CAST( MAX(total_cases) AS float ) / NULLIF( population, 0 ) ) *100, 4) ) DESC ) as infected_pop_rank
@@ -100,8 +100,7 @@ FROM (
 	GROUP BY location, population
 	) t
 WHERE 
-	continent <> ''
-	AND t.location = 'Vietnam'
+	t.location = 'Vietnam'
 	OR t.location = 'United States'
 	OR t.location = 'India'
 	OR t.location = 'China'
@@ -109,7 +108,7 @@ WHERE
 	OR t.location = 'Japan'
 	OR t.location = 'South Korea'
 
-ORDER by t.infected_pop_rank ASC, t.dead_infected_rank ASC
+ORDER by t.location -- t.infected_pop_rank ASC, t.dead_infected_rank ASC
 ;
 
 -- Death rate by continent
