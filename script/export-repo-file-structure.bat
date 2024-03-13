@@ -26,8 +26,8 @@ echo GitHub's Repository File Structure >> "%final_result%"
 echo Updated by %fullstamp% >> "%final_result%"
 echo: >> "%final_result%"
 echo:
-echo covid-19-stats >> "%final_result%"
 echo ``` >> "%final_result%"
+echo covid-19-stats >> "%final_result%"
 more +3 "%temp_result%" >> "%final_result%"
 echo ``` >> "%final_result%"
 
