@@ -1,9 +1,10 @@
 --------- COVID-19 3-Year Look Back by Mandy HP Nguyen --------- 
  
 GitHub's Repository File Structure 
-Updated by 2024/03/13 16:44:35 
+Updated by 2024/03/13 16:52:35 
  
 covid-19-stats 
+``` 
 +---data
 |   +---geo
 |   |   \---datahub
@@ -29,3 +30,4 @@ covid-19-stats
 +---viz
 +---pages
 \---script
+``` 
